@@ -1,12 +1,6 @@
 name: CI/CD For SiYuan
 
-on:
-  push:
-    branch:
-      - master
-      - dev
-    tags:
-      - v*
+on: workflow_dispatch
 
 jobs:
 
@@ -51,7 +45,7 @@ jobs:
           tag_name: ${{ github.ref }}
           body: ${{ steps.release_info.outputs.release_body }}
           draft: true
-          prerelease: false
+          prerelease: true
 
   build:
     runs-on: ${{ matrix.config.os }}
