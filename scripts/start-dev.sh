@@ -23,6 +23,8 @@ REBUILD=0
 FRONTEND=0
 BACKEND=0
 WORKSPACE=$(cd `dirname $BASEDIR`;echo `pwd`/"Documents/SiYuan")
+NODEIMAGE="docker.io/library/node:16-bullseye"
+GOLANGIMAGE="docker.io/library/golang:1-bullseye"
 
 function InitlizePod () {
     echo "Start to initilize pod..."
@@ -36,11 +38,19 @@ function InitlizePod () {
     fi
 }
 
+function PullImage () {
+    while :
+    do
+        buildah pull $1 && break
+    done
+}
+
 function BuildFrontImage () {
     if [[ "$(podman images ${NAME} 2>&1 >/dev/null;echo $?)" != "0" || "${REBUILD}" == "1" ]];then
         echo "Start build ${NAME} image..."
         buildah ps -a | grep -q ${NAME} && buildah rm ${NAME} || :
-        container=$(buildah from --name ${NAME} docker.io/library/node:16-bullseye)
+        PullImage ${NODEIMAGE}
+        container=$(buildah from --name ${NAME} ${NODEIMAGE})
         buildah run ${container} -- sh -c "sed -i 's|deb.debian.org|mirrors.ustc.edu.cn|' /etc/apt/sources.list &&
             sed -i 's|security.debian.org/debian-security|mirrors.ustc.edu.cn/debian-security|g' /etc/apt/sources.list &&
             apt-get update -y &&
@@ -65,7 +75,8 @@ function BuildGoImage () {
     if [[ "$(podman images ${NAME} 2>&1 >/dev/null;echo $?)" != "0" || "${REBUILD}" == "1" ]];then
         echo "Start build ${NAME} image..."
         buildah ps -a | grep -q ${NAME} && buildah rm ${NAME} || :
-        container=$(buildah from --name ${NAME} docker.io/library/golang:1-bullseye)
+        PullImage ${GOLANGIMAGE}
+        container=$(buildah from --name ${NAME} ${GOLANGIMAGE})
         buildah run ${container} -- sh -c "sed -i 's|deb.debian.org|mirrors.ustc.edu.cn|' /etc/apt/sources.list &&
             sed -i 's|security.debian.org/debian-security|mirrors.ustc.edu.cn/debian-security|g' /etc/apt/sources.list &&
             apt-get update -y &&
